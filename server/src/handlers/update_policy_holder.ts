@@ -1,19 +1,43 @@
+import { db } from '../db';
+import { policyHoldersTable } from '../db/schema';
 import { type UpdatePolicyHolderInput, type PolicyHolder } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export const updatePolicyHolder = async (input: UpdatePolicyHolderInput): Promise<PolicyHolder | null> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is updating an existing policy holder in the database.
-    // Should validate that the policy holder exists and update only provided fields.
-    // Should ensure policy_number remains unique if updated.
-    return Promise.resolve({
-        id: input.id,
-        name: input.name || "Updated Name", // Use input or placeholder
-        policy_number: input.policy_number || "POL-2024-001",
-        email: input.email || "updated@example.com",
-        phone: input.phone || "+1-555-0123",
-        address: input.address || "Updated Address",
-        date_of_birth: input.date_of_birth || new Date('1980-01-01'),
-        created_at: new Date(), // Would be original creation date
-        updated_at: new Date()  // Current timestamp
-    } as PolicyHolder);
+  try {
+    // First check if the policy holder exists
+    const existingPolicyHolder = await db.select()
+      .from(policyHoldersTable)
+      .where(eq(policyHoldersTable.id, input.id))
+      .execute();
+
+    if (existingPolicyHolder.length === 0) {
+      return null; // Policy holder not found
+    }
+
+    // Build the update object with only provided fields
+    const updateData: any = {};
+    
+    if (input.name !== undefined) updateData.name = input.name;
+    if (input.policy_number !== undefined) updateData.policy_number = input.policy_number;
+    if (input.email !== undefined) updateData.email = input.email;
+    if (input.phone !== undefined) updateData.phone = input.phone;
+    if (input.address !== undefined) updateData.address = input.address;
+    if (input.date_of_birth !== undefined) updateData.date_of_birth = input.date_of_birth;
+    
+    // Always update the updated_at timestamp
+    updateData.updated_at = new Date();
+
+    // Perform the update
+    const result = await db.update(policyHoldersTable)
+      .set(updateData)
+      .where(eq(policyHoldersTable.id, input.id))
+      .returning()
+      .execute();
+
+    return result[0] || null;
+  } catch (error) {
+    console.error('Policy holder update failed:', error);
+    throw error;
+  }
 };

@@ -1,8 +1,18 @@
+import { db } from '../db';
+import { policyHoldersTable } from '../db/schema';
 import { type PolicyHolder } from '../schema';
+import { asc } from 'drizzle-orm';
 
 export const getPolicyHolders = async (): Promise<PolicyHolder[]> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all policy holders from the database.
-    // Should return policy holders ordered by name or creation date.
-    return [];
+  try {
+    const results = await db.select()
+      .from(policyHoldersTable)
+      .orderBy(asc(policyHoldersTable.name))
+      .execute();
+
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch policy holders:', error);
+    throw error;
+  }
 };
